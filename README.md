@@ -31,7 +31,7 @@ Native Pronunciation Audio Response
 React Audio Player & Interactive Progress Dashboard
 ```
 
-Learners practice speaking in their chosen target language (English, Hindi, Kannada, Telugu, Spanish, French, German, Japanese), receive immediate textual and auditory diagnostics, and track their grammar mastery over time with adaptive difficulty tuning.
+Learners practice speaking in their chosen target language (English, Hindi, Kannada, Telugu, Tamil, Marathi, Bengali, Malayalam, Gujarati, Punjabi), receive immediate textual and auditory diagnostics, and track their grammar mastery over time with adaptive difficulty tuning.
 
 ---
 
@@ -86,6 +86,7 @@ ai-voice-language-tutor/
 │   │   │   ├── openai.js                # OpenAI SDK client & model configuration
 │   │   │   ├── transcriptionService.js  # STT audio processing & disk cleanup
 │   │   │   ├── llmService.js            # Structured Output prompt & grammar diagnostics
+│   │   │   ├── linguisticFallback.js    # Zero-failure linguistic rule engine for Indian languages
 │   │   │   └── ttsService.js            # TTS speech synthesis (resilient/non-fatal)
 │   │   │
 │   │   ├── middleware/
@@ -102,44 +103,46 @@ ai-voice-language-tutor/
 │   ├── .gitignore
 │   └── package.json
 │
-├── public/
-│   └── favicon.svg                      # Brand microphone icon
-│
-├── src/
-│   ├── components/
-│   │   ├── Header.jsx                   # Navigation, brand & session counter
-│   │   ├── LanguageSelector.jsx         # Multi-language selector chips
-│   │   ├── Recorder.jsx                 # Mic button, pulse rings & visualizer
-│   │   ├── RecordingTimer.jsx           # Formatted mm:ss recording timer
-│   │   ├── TranscriptCard.jsx           # User spoken sentence display
-│   │   ├── FeedbackCard.jsx             # AI correction, feedback & encouragement
-│   │   ├── ScoreCard.jsx                # Grammar & vocabulary visual score meters
-│   │   ├── MistakesList.jsx             # Itemized diffs & learner-friendly explanations
-│   │   ├── AudioPlayer.jsx              # Custom TTS playback with speed modifiers
-│   │   ├── Loading.jsx                  # Multi-step animated processing screen
-│   │   ├── ErrorMessage.jsx             # Actionable error alert & retry handling
-│   │   └── ProgressDashboard.jsx        # Analytics, history & adaptive difficulty
+├── frontend/
+│   ├── public/
+│   │   └── favicon.svg                  # Brand microphone icon
 │   │
-│   ├── services/
-│   │   └── api.js                       # Frontend API client & FormData builder
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Header.jsx               # Navigation, brand & session counter
+│   │   │   ├── LanguageSelector.jsx     # 10 Indian language selector chips
+│   │   │   ├── Recorder.jsx             # Mic button, pulse rings & live visualizer
+│   │   │   ├── RecordingTimer.jsx       # Formatted mm:ss recording timer
+│   │   │   ├── TranscriptCard.jsx       # User spoken sentence display
+│   │   │   ├── FeedbackCard.jsx         # AI correction, feedback & encouragement
+│   │   │   ├── ScoreCard.jsx            # Grammar & vocabulary visual score meters
+│   │   │   ├── MistakesList.jsx         # Itemized diffs & learner-friendly explanations
+│   │   │   ├── AudioPlayer.jsx          # Native TTS & Web Speech playback
+│   │   │   ├── Loading.jsx              # Multi-step animated processing screen
+│   │   │   ├── ErrorMessage.jsx         # Actionable error alert & retry handling
+│   │   │   └── ProgressDashboard.jsx    # Analytics, history & adaptive difficulty
+│   │   │
+│   │   ├── services/
+│   │   │   └── api.js                   # Frontend API client & FormData builder
+│   │   │
+│   │   ├── hooks/
+│   │   │   └── useRecorder.js           # MediaRecorder & Web Speech Recognition hook
+│   │   │
+│   │   ├── utils/
+│   │   │   └── storage.js               # LocalStorage persistence & analytics metrics
+│   │   │
+│   │   ├── App.jsx                      # Main application state orchestrator
+│   │   ├── App.css                      # Component styling & glassmorphism theme
+│   │   ├── index.css                    # CSS variables & typography
+│   │   └── main.jsx                     # React entrypoint
 │   │
-│   ├── hooks/
-│   │   └── useRecorder.js               # MediaRecorder lifecycle & volume meter hook
-│   │
-│   ├── utils/
-│   │   └── storage.js                   # LocalStorage persistence & analytics metrics
-│   │
-│   ├── App.jsx                          # Main application state orchestrator
-│   ├── App.css                          # Component styling & glassmorphism theme
-│   ├── index.css                        # CSS variables & typography
-│   └── main.jsx                         # React entrypoint
-│
-├── index.html                           # HTML5 shell with Google Fonts
-├── vite.config.js                       # Vite build configuration
-├── .env.example                         # Frontend environment template
-├── .gitignore
-├── README.md                            # Comprehensive documentation
-└── package.json                         # Root frontend dependencies & scripts
+│   ├── index.html                       # HTML5 shell with Google Fonts
+│   ├── vite.config.js                   # Vite build configuration
+│   ├── .env.example                     # Frontend environment template
+│   ├── .gitignore
+│   └── package.json
+├── package.json                         # Root orchestrator scripts (run dev, build, test)
+└── README.md
 ```
 
 ---
@@ -368,7 +371,7 @@ npm test
 
 1. **Import Repository into Vercel**:
    - Framework Preset: `Vite`
-   - Root Directory: `./` (Root)
+   - Root Directory: `frontend`
    - Build Command: `npm run build`
    - Output Directory: `dist`
 2. **Set Frontend Environment Variables on Vercel**:

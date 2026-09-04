@@ -17,13 +17,18 @@ async function runTests() {
     }
   }
 
-  // Test 1: Language code mapping
+  // Test 1: Language code mapping for Indian Languages
   console.log('[1] Testing Language Code Normalization...');
   assert(getLanguageCode('English') === 'en', 'Maps "English" -> "en"');
-  assert(getLanguageCode('Hindi') === 'hi', 'Maps "Hindi" -> "hi');
-  assert(getLanguageCode('Kannada') === 'kn', 'Maps "Kannada" -> "kn');
-  assert(getLanguageCode('Telugu') === 'te', 'Maps "Telugu" -> "te');
-  assert(getLanguageCode('Spanish') === 'es', 'Maps "Spanish" -> "es');
+  assert(getLanguageCode('Hindi') === 'hi', 'Maps "Hindi" -> "hi"');
+  assert(getLanguageCode('Kannada') === 'kn', 'Maps "Kannada" -> "kn"');
+  assert(getLanguageCode('Telugu') === 'te', 'Maps "Telugu" -> "te"');
+  assert(getLanguageCode('Tamil') === 'ta', 'Maps "Tamil" -> "ta"');
+  assert(getLanguageCode('Marathi') === 'mr', 'Maps "Marathi" -> "mr"');
+  assert(getLanguageCode('Bengali') === 'bn', 'Maps "Bengali" -> "bn"');
+  assert(getLanguageCode('Malayalam') === 'ml', 'Maps "Malayalam" -> "ml"');
+  assert(getLanguageCode('Gujarati') === 'gu', 'Maps "Gujarati" -> "gu"');
+  assert(getLanguageCode('Punjabi') === 'pa', 'Maps "Punjabi" -> "pa"');
 
   // Test 2: AppError custom class
   console.log('\n[2] Testing AppError Class & Error Structure...');

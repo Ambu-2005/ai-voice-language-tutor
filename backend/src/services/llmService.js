@@ -1,5 +1,6 @@
 import { openai, AI_MODELS, getApiKey } from './openai.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { evaluateLinguistically } from './linguisticFallback.js';
 
 /**
  * System instruction prompt for the Language Tutor LLM
@@ -42,7 +43,7 @@ You MUST return your response as a valid JSON object matching this schema:
 }
 
 /**
- * Analyzes learner sentence transcript using OpenAI LLM
+ * Analyzes learner sentence transcript using OpenAI LLM with automatic Zero-Failure Linguistic Fallback
  * @param {string} transcript - Spoken sentence transcribed by STT
  * @param {string} targetLanguage - Target learning language (e.g. English, Hindi, Kannada, Telugu)
  * @returns {Promise<object>} Structured evaluation object
@@ -52,12 +53,10 @@ export async function analyzeTranscript(transcript, targetLanguage = 'English') 
     throw new AppError('NO_SPEECH', 'Transcript is empty. Please speak a sentence to evaluate.', 400);
   }
 
+  // If OpenAI API key is missing, immediately use the intelligent linguistic analyzer
   if (!getApiKey()) {
-    throw new AppError(
-      'SERVER_ERROR',
-      'OpenAI API Key is missing on the server. Please set OPENAI_API_KEY in backend/.env.',
-      500
-    );
+    console.warn('[LLM Notice]: OpenAI API Key is not configured. Utilizing Intelligent Linguistic Engine.');
+    return evaluateLinguistically(transcript, targetLanguage);
   }
 
   const systemPrompt = buildSystemPrompt(targetLanguage);
@@ -84,7 +83,7 @@ export async function analyzeTranscript(transcript, targetLanguage = 'English') 
       parsed = JSON.parse(content);
     } catch (parseErr) {
       console.error('[LLM JSON Parse Error]: Raw content:', content);
-      throw new AppError('LLM_INVALID_RESPONSE', 'Failed to parse AI evaluation response.', 500);
+      return evaluateLinguistically(transcript, targetLanguage);
     }
 
     // Sanitize and validate fields
@@ -119,14 +118,16 @@ export async function analyzeTranscript(transcript, targetLanguage = 'English') 
 
     return sanitized;
   } catch (err) {
+    // If OpenAI API quota is exhausted (429) or connection error, gracefully fallback
+    if (err.status === 429 || err.code === 'insufficient_quota' || err.status === 401 || err.status >= 500) {
+      console.warn(`[LLM Notice]: Cloud API returned ${err.status || err.message}. Gracefully switching to Intelligent Linguistic Engine.`);
+      return evaluateLinguistically(transcript, targetLanguage);
+    }
+
     if (err instanceof AppError) throw err;
 
-    console.error('[LLM Service Error]:', err);
-    throw new AppError(
-      'LLM_FAILED',
-      err.message || 'AI sentence analysis failed. Please try again.',
-      500,
-      err
-    );
+    console.warn('[LLM Fallback Triggered]:', err.message);
+    return evaluateLinguistically(transcript, targetLanguage);
   }
 }
+

@@ -34,6 +34,7 @@ export default function App() {
     isRecording,
     recordingTime,
     audioLevel,
+    recognizedText,
     recorderError,
     startRecording,
     stopRecording,
@@ -63,7 +64,7 @@ export default function App() {
     setAudioDataUri(null);
 
     try {
-      await startRecording();
+      await startRecording(selectedLanguage);
       setRecordingState('recording');
     } catch (err) {
       setRecordingState('error');
@@ -77,9 +78,9 @@ export default function App() {
   const handleStop = async () => {
     try {
       setRecordingState('processing');
-      const blob = await stopRecording();
+      const { blob, recognizedText } = await stopRecording();
 
-      const result = await analyzeRecording(blob, selectedLanguage);
+      const result = await analyzeRecording(blob, selectedLanguage, recognizedText);
 
       setTranscript(result.transcript);
       setAnalysis(result.analysis);
@@ -212,6 +213,7 @@ export default function App() {
                   isRecording={isRecording}
                   recordingTime={recordingTime}
                   audioLevel={audioLevel}
+                  recognizedText={recognizedText}
                   recordingState={recordingState}
                   onStart={handleStart}
                   onStop={handleStop}
@@ -298,6 +300,7 @@ export default function App() {
                   <AudioPlayer
                     audioDataUri={audioDataUri}
                     correctedSentence={analysis.correctedSentence}
+                    language={selectedLanguage}
                   />
 
                   {/* 4. Assessment Scores (Grammar & Vocabulary Gauges) */}

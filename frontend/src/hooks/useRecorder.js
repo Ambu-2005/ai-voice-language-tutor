@@ -1,7 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
+// BCP-47 speech recognition language code mapping for Indian Languages
+const BCP47_LANGUAGE_CODES = {
+  english: 'en-IN',
+  hindi: 'hi-IN',
+  kannada: 'kn-IN',
+  telugu: 'te-IN',
+  tamil: 'ta-IN',
+  marathi: 'mr-IN',
+  bengali: 'bn-IN',
+  malayalam: 'ml-IN',
+  gujarati: 'gu-IN',
+  punjabi: 'pa-IN',
+};
+
+function getSpeechLang(language) {
+  if (!language) return 'en-US';
+  const key = language.trim().toLowerCase();
+  return BCP47_LANGUAGE_CODES[key] || 'en-US';
+}
+
 /**
- * Custom React hook for recording audio via MediaRecorder with audio-meter and track cleanup
+ * Custom React hook for recording audio via MediaRecorder & Web Speech Recognition
  */
 export function useRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -10,8 +30,11 @@ export function useRecorder() {
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [recorderError, setRecorderError] = useState(null);
+  const [recognizedText, setRecognizedText] = useState('');
 
   const mediaRecorderRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
+  const recognizedTextRef = useRef('');
   const streamRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
@@ -33,11 +56,17 @@ export function useRecorder() {
     setAudioLevel(0);
   }, []);
 
-  // Helper to release hardware mic tracks
+  // Helper to release hardware mic tracks and speech recognition
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+    }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch (e) {}
+      speechRecognitionRef.current = null;
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
@@ -57,11 +86,14 @@ export function useRecorder() {
   }, [cleanupStream, audioUrl]);
 
   /**
-   * Starts recording learner speech
+   * Starts recording learner speech & activates client-side Web Speech Recognition
    */
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (language = 'English') => {
     setRecorderError(null);
     setAudioBlob(null);
+    setRecognizedText('');
+    recognizedTextRef.current = '';
+
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -72,13 +104,6 @@ export function useRecorder() {
     // 1. Verify Browser Support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       const err = new Error('Your browser does not support microphone audio recording.');
-      err.code = 'BROWSER_UNSUPPORTED';
-      setRecorderError(err);
-      throw err;
-    }
-
-    if (typeof MediaRecorder === 'undefined') {
-      const err = new Error('MediaRecorder API is not available in this browser environment.');
       err.code = 'BROWSER_UNSUPPORTED';
       setRecorderError(err);
       throw err;
@@ -117,7 +142,6 @@ export function useRecorder() {
               sum += dataArray[i];
             }
             const average = sum / dataArray.length;
-            // Normalize to 0-100 percentage
             const level = Math.min(100, Math.round((average / 128) * 100));
             setAudioLevel(level);
             animationFrameRef.current = requestAnimationFrame(updateVolume);
@@ -128,32 +152,65 @@ export function useRecorder() {
         console.warn('AudioContext volume metering not available:', audioCtxErr);
       }
 
-      // 4. Select best supported audio MIME type
+      // 4. Initialize MediaRecorder
       let mimeType = 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        if (MediaRecorder.isTypeSupported('audio/webm')) {
-          mimeType = 'audio/webm';
-        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          mimeType = 'audio/mp4';
-        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
-          mimeType = 'audio/ogg';
-        } else {
-          mimeType = ''; // Let browser use default
+      if (typeof MediaRecorder !== 'undefined') {
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          if (MediaRecorder.isTypeSupported('audio/webm')) {
+            mimeType = 'audio/webm';
+          } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+          } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+            mimeType = 'audio/ogg';
+          } else {
+            mimeType = '';
+          }
+        }
+
+        const recorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.start(100);
+      }
+
+      // 5. Initialize Web Speech Recognition in parallel (Client-side free STT fallback)
+      const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognitionClass) {
+        try {
+          const recognition = new SpeechRecognitionClass();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = getSpeechLang(language);
+
+          recognition.onresult = (event) => {
+            let fullTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+              fullTranscript += event.results[i][0].transcript + ' ';
+            }
+            const trimmed = fullTranscript.trim();
+            recognizedTextRef.current = trimmed;
+            setRecognizedText(trimmed);
+          };
+
+          recognition.onerror = (recErr) => {
+            console.warn('[Web Speech Recognition non-fatal]:', recErr.error);
+          };
+
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch (recInitErr) {
+          console.warn('SpeechRecognition initialization notice:', recInitErr);
         }
       }
 
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.start(100); // collect slice every 100ms
       startTimeRef.current = Date.now();
       setIsRecording(true);
 
@@ -180,30 +237,44 @@ export function useRecorder() {
   }, [cleanupStream, audioUrl]);
 
   /**
-   * Stops recording and returns the Audio Blob
-   * @returns {Promise<Blob>}
+   * Stops recording and returns the Audio Blob and client-recognized speech text
+   * @returns {Promise<{ blob: Blob, recognizedText: string }>}
    */
   const stopRecording = useCallback(() => {
     return new Promise((resolve, reject) => {
       const recorder = mediaRecorderRef.current;
+      const durationMs = Date.now() - (startTimeRef.current || 0);
+
+      // Stop speech recognition
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.stop();
+        } catch (e) {}
+      }
+
       if (!recorder || recorder.state === 'inactive') {
         cleanupStream();
         setIsRecording(false);
+        const finalClientText = recognizedTextRef.current.trim();
+        if (finalClientText) {
+          resolve({ blob: null, recognizedText: finalClientText });
+          return;
+        }
         const err = new Error('No active recording found.');
         err.code = 'EMPTY_AUDIO';
         reject(err);
         return;
       }
 
-      const durationMs = Date.now() - (startTimeRef.current || 0);
-
       recorder.onstop = () => {
         cleanupStream();
         setIsRecording(false);
 
-        // Check if recording is too short (< 400ms)
-        if (durationMs < 400 || audioChunksRef.current.length === 0) {
-          const err = new Error('Recording was too short. Please hold the record button and speak a complete sentence.');
+        const finalClientText = recognizedTextRef.current.trim();
+
+        // Check if recording is too short (< 300ms) and no speech recognized
+        if (durationMs < 300 && !finalClientText) {
+          const err = new Error('Recording was too short. Please speak a complete sentence.');
           err.code = 'EMPTY_AUDIO';
           setRecorderError(err);
           reject(err);
@@ -213,18 +284,14 @@ export function useRecorder() {
         const mimeType = recorder.mimeType || 'audio/webm';
         const blob = new Blob(audioChunksRef.current, { type: mimeType });
 
-        if (blob.size === 0) {
-          const err = new Error('Recorded audio file is empty.');
-          err.code = 'EMPTY_AUDIO';
-          setRecorderError(err);
-          reject(err);
-          return;
-        }
-
         setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
-        resolve(blob);
+
+        resolve({
+          blob: blob.size > 0 ? blob : null,
+          recognizedText: finalClientText,
+        });
       };
 
       try {
@@ -232,7 +299,12 @@ export function useRecorder() {
       } catch (err) {
         cleanupStream();
         setIsRecording(false);
-        reject(err);
+        const finalClientText = recognizedTextRef.current.trim();
+        if (finalClientText) {
+          resolve({ blob: null, recognizedText: finalClientText });
+        } else {
+          reject(err);
+        }
       }
     });
   }, [cleanupStream]);
@@ -247,6 +319,8 @@ export function useRecorder() {
     setAudioBlob(null);
     setAudioLevel(0);
     setRecorderError(null);
+    setRecognizedText('');
+    recognizedTextRef.current = '';
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -259,9 +333,11 @@ export function useRecorder() {
     audioBlob,
     audioUrl,
     audioLevel,
+    recognizedText,
     recorderError,
     startRecording,
     stopRecording,
     resetRecording,
   };
 }
+

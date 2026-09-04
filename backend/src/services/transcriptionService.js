@@ -2,25 +2,18 @@ import fs from 'fs';
 import { openai, AI_MODELS, getApiKey } from './openai.js';
 import { AppError } from '../middleware/errorHandler.js';
 
-// ISO-639-1 language code mapping for OpenAI Whisper / Transcription API
+// ISO-639-1 language code mapping for Indian Languages
 const LANGUAGE_CODES = {
   english: 'en',
   hindi: 'hi',
   kannada: 'kn',
   telugu: 'te',
-  spanish: 'es',
-  french: 'fr',
-  german: 'de',
-  japanese: 'ja',
   tamil: 'ta',
-  bengali: 'bn',
   marathi: 'mr',
-  mandarin: 'zh',
-  italian: 'it',
-  portuguese: 'pt',
-  russian: 'ru',
-  arabic: 'ar',
-  korean: 'ko',
+  bengali: 'bn',
+  malayalam: 'ml',
+  gujarati: 'gu',
+  punjabi: 'pa',
 };
 
 /**

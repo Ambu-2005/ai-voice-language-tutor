@@ -1822,3 +1822,67 @@
     justify-content: space-between;
   }
 }
+
+/* ==========================================================================
+   Live Speech Recognition & Native Synthesis Styles
+   ========================================================================== */
+.live-speech-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius-md);
+  margin-top: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.live-speech-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  animation: pulse-ring 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.live-speech-text {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-style: italic;
+  margin: 0;
+}
+
+.audio-synthesis-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.synth-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.synth-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  animation: pulse-ring 1.2s infinite;
+}
+
+.synth-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+

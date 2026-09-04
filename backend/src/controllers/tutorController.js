@@ -10,23 +10,43 @@ import { AppError } from '../middleware/errorHandler.js';
  */
 export async function handleAnalyzeRecording(req, res, next) {
   try {
-    if (!req.file) {
+    const language = req.body?.language || 'English';
+    const clientTranscript = req.body?.clientTranscript?.trim();
+
+    if (!req.file && !clientTranscript) {
       throw new AppError(
         'NO_AUDIO',
-        'No audio recording received. Please record your voice and try again.',
+        'No audio recording or speech transcript received. Please record your voice and try again.',
         400
       );
     }
 
-    const language = req.body?.language || 'English';
+    let transcript = clientTranscript || '';
 
-    // 1. Convert Speech to Text
-    const transcript = await transcribeAudio(req.file, language);
+    // 1. Convert Speech to Text via Server STT (Whisper) if file provided
+    if (req.file) {
+      try {
+        const serverTranscript = await transcribeAudio(req.file, language);
+        if (serverTranscript && serverTranscript.trim()) {
+          transcript = serverTranscript.trim();
+        }
+      } catch (sttErr) {
+        console.warn('[STT Fallback Notice]: Server STT failed:', sttErr.message);
+        // If server STT failed (e.g. 429 quota) but client captured speech via Web Speech API, use client transcript
+        if (!transcript) {
+          throw sttErr;
+        }
+      }
+    }
 
-    // 2. Perform Intelligent LLM Analysis on Grammar, Vocabulary, Mistakes & Feedback
+    if (!transcript) {
+      throw new AppError('NO_SPEECH', 'No speech could be recognized. Please try speaking again clearly.', 400);
+    }
+
+    // 2. Perform Intelligent LLM / Linguistic Analysis on Grammar, Vocabulary, Mistakes & Feedback
     const analysis = await analyzeTranscript(transcript, language);
 
-    // 3. Generate Spoken Audio for the Corrected Sentence (Non-fatal if TTS fails)
+    // 3. Generate Spoken Audio for the Corrected Sentence (Non-fatal if TTS fails or quota exceeded)
     let audio = null;
     try {
       audio = await generateSpeechAudio(analysis.correctedSentence);

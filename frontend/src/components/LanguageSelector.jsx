@@ -2,14 +2,16 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 
 const SUPPORTED_LANGUAGES = [
-  { id: 'English', name: 'English', native: 'English', flag: '🇬🇧', hint: 'Universal' },
+  { id: 'English', name: 'English', native: 'English', flag: '🇮🇳', hint: 'Universal' },
   { id: 'Hindi', name: 'Hindi', native: 'हिंदी', flag: '🇮🇳', hint: 'Devanagari' },
   { id: 'Kannada', name: 'Kannada', native: 'ಕನ್ನಡ', flag: '🇮🇳', hint: 'Dravidian' },
   { id: 'Telugu', name: 'Telugu', native: 'తెలుగు', flag: '🇮🇳', hint: 'Dravidian' },
-  { id: 'Spanish', name: 'Spanish', native: 'Español', flag: '🇪🇸', hint: 'Romance' },
-  { id: 'French', name: 'French', native: 'Français', flag: '🇫🇷', hint: 'Romance' },
-  { id: 'German', name: 'German', native: 'Deutsch', flag: '🇩🇪', hint: 'Germanic' },
-  { id: 'Japanese', name: 'Japanese', native: '日本語', flag: '🇯🇵', hint: 'East Asian' },
+  { id: 'Tamil', name: 'Tamil', native: 'தமிழ்', flag: '🇮🇳', hint: 'Dravidian' },
+  { id: 'Marathi', name: 'Marathi', native: 'मराठी', flag: '🇮🇳', hint: 'Devanagari' },
+  { id: 'Bengali', name: 'Bengali', native: 'বাংলা', flag: '🇮🇳', hint: 'Indo-Aryan' },
+  { id: 'Malayalam', name: 'Malayalam', native: 'മലയാളം', flag: '🇮🇳', hint: 'Dravidian' },
+  { id: 'Gujarati', name: 'Gujarati', native: 'ગુજરાતી', flag: '🇮🇳', hint: 'Indo-Aryan' },
+  { id: 'Punjabi', name: 'Punjabi', native: 'ਪੰਜਾਬੀ', flag: '🇮🇳', hint: 'Gurmukhi' },
 ];
 
 export default function LanguageSelector({ selectedLanguage, onSelectLanguage, disabled = false }) {

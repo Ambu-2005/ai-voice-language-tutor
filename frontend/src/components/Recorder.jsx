@@ -7,6 +7,7 @@ export default function Recorder({
   recordingTime,
   audioLevel,
   recordingState, // 'idle' | 'recording' | 'processing' | 'success' | 'error'
+  recognizedText = '',
   onStart,
   onStop,
   onReset,
@@ -95,6 +96,14 @@ export default function Recorder({
               />
             );
           })}
+        </div>
+      )}
+
+      {/* Live speech preview if speech recognition captured words */}
+      {isRecording && recognizedText && (
+        <div className="live-speech-preview">
+          <span className="live-speech-dot" />
+          <p className="live-speech-text">"{recognizedText}"</p>
         </div>
       )}
 
