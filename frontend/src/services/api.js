@@ -1,4 +1,22 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+function getApiBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  // If running in production browser (e.g. Vercel) and no env var set, automatically connect to Render backend
+  if (
+    typeof window !== 'undefined' &&
+    window.location &&
+    !['localhost', '127.0.0.1'].includes(window.location.hostname)
+  ) {
+    return 'https://ai-voice-language-tutor-zil3.onrender.com';
+  }
+
+  return 'http://localhost:5000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Normalizes error responses from the backend or network
@@ -14,7 +32,7 @@ async function handleApiError(response) {
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message: `Network response error (${response.status}: ${response.statusText})`,
+        message: `Network response error (${response.status}: ${response.statusText}) from ${API_BASE_URL}`,
       },
     };
   }
