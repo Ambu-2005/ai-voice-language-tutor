@@ -1,0 +1,20 @@
+{
+  "name": "ai-voice-language-tutor-backend",
+  "version": "1.0.0",
+  "description": "Backend API for AI Voice Language Tutor (STT -> LLM -> TTS)",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node tests/pipeline.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.56.0"
+  },
+  "devDependencies": {}
+}
