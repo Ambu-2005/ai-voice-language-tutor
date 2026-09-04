@@ -2,14 +2,16 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { handleAnalyzeRecording, handleAnalyzeText } from '../controllers/tutorController.js';
 import { handleTranscribe } from '../controllers/speechController.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
 
-// Ensure uploads directory exists
-const uploadsDir = path.resolve('uploads');
+// Ensure uploads directory exists relative to backend root
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.resolve(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
